@@ -1,0 +1,61 @@
+//------------------------------------------------
+//--- 010 Editor v15.0 Binary Template
+//
+//      File: 
+//   Authors: Simon Davies (insomnious) & Nexus Mods
+//   Version: 1.0.0
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+LittleEndian();
+
+typedef struct {
+    uint version;
+    uint64 fileListOffset;
+    uint fileListSize;
+    byte flags;
+    byte priority;
+    char md5[16];
+    ushort numParts;    
+} HEADER;
+
+typedef struct {
+    string name;
+    uint64 offsetInFile;
+    uint64 sizeOnDisk;
+    uint64 uncompressedSize;
+    uint archivePart;
+    uint flags;
+    uint crc;
+    uint unknown;    
+} FILE_ENTRY_15;
+
+typedef struct {
+    string name;
+    uint offsetInFile1;
+    ushort offsetInFile2;
+    byte archivePart;
+    byte flags;
+    uint sizeOnDisk;
+    uint uncompressedSize;    
+} FILE_ENTRY_18;
+
+
+
+// actual file
+
+char magic[4];    //0x4C53504B
+
+HEADER header;
+
+// Printf("FTell() = %d\n", FTell());
+
+FSeek(header.fileListOffset);
+
+uint numOfFiles;
+uint compressedSize;
+byte compressedFileList[compressedSize];
