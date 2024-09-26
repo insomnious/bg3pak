@@ -1,5 +1,4 @@
 ﻿// See https://aka.ms/new-console-template for more information
-
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,9 +6,8 @@ using K4os.Compression.LZ4;
 using Newtonsoft.Json;
 
 //string pakFile = @"paks\ImpUI_26922ba9-6018-5252-075d-7ff2ba6ed879.pak";
-string pakFile = @"";
-string projectDirectory = Directory.GetCurrentDirectory();
-string filePath = Path.Combine(projectDirectory, pakFile);
+string pakFile = @"assets/AllItems.pak";
+string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, pakFile);
 
 PakFileLoader pakLoader = new PakFileLoader();
 pakLoader.LoadFromFile(filePath);
@@ -123,7 +121,8 @@ public class PakFileLoader
         {
             header.numParts = br.ReadUInt16();
         }
-
+        
+        Console.WriteLine($"MD5: {BitConverter.ToString(header.MD5).Replace("-", "").ToLower()}");
         // display header
         Console.WriteLine(JsonConvert.SerializeObject(header, Formatting.Indented));
         
@@ -159,7 +158,7 @@ public class PakFileLoader
         Console.WriteLine("Decompression successful.");
 
         // write temp bytes so we can see what we're working with
-        File.WriteAllBytes(@"C:\Work\bg3pak\paks\temp.bin", decompressed);
+        File.WriteAllBytes(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"assets\temp.bin") , decompressed);
 
         // new mem stream from decompress bytes
         using var ms = new MemoryStream(decompressed);
@@ -174,7 +173,7 @@ public class PakFileLoader
         {
             var entry = GetFileEntry(msr, (int) header.Version);
 
-            Console.WriteLine(JsonConvert.SerializeObject(entry, Formatting.Indented));
+            //Console.WriteLine(JsonConvert.SerializeObject(entry, Formatting.Indented));
             
             entries.Add(entry);
         }
@@ -189,8 +188,7 @@ public class PakFileLoader
 
             byte[] metaLsxData = ReadFileEntryData(br, metaLsx, (int)metaLsx.OffsetInFile, (int)metaLsx.SizeOnDisk);
 
-            string metaLsxFilePath = @"C:\Work\bg3pak\paks\meta.lsx";
-            File.WriteAllBytes(metaLsxFilePath, metaLsxData);
+            File.WriteAllBytes(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"assets\meta.lsx"), metaLsxData);
         }
         else
         {

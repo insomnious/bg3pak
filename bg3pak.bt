@@ -14,13 +14,14 @@
 LittleEndian();
 
 typedef struct {
+    char magic[4] <style=sHeading1Accent>;    //0x4C53504B
     uint version;
     uint64 fileListOffset;
     uint fileListSize;
     byte flags;
     byte priority;
-    char md5[16];
-    ushort numParts;    
+    byte md5[16];
+    if(version > 15) ushort numParts;    
 } HEADER;
 
 typedef struct {
@@ -44,18 +45,18 @@ typedef struct {
     uint uncompressedSize;    
 } FILE_ENTRY_18;
 
-
+local int64 fileSize = FileSize();
 
 // actual file
 
-char magic[4];    //0x4C53504B
-
-HEADER header;
+HEADER header <style=sHeading1>;
 
 // Printf("FTell() = %d\n", FTell());
 
-FSeek(header.fileListOffset);
+byte fileData[header.fileListOffset - sizeof(header)] <style=sHeading2>;
 
-uint numOfFiles;
-uint compressedSize;
-byte compressedFileList[compressedSize];
+// FSeek(header.fileListOffset);
+
+uint numOfFiles <style=sHeading3Accent>;
+uint compressedSize <style=sHeading3Accent>;
+byte compressedFileList[compressedSize]  <style=sHeading3>;
