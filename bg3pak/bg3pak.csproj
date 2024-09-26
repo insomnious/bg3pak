@@ -5,6 +5,8 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Authors>Nexus Mods</Authors>
+        <Company>Nexus Mods</Company>
     </PropertyGroup>
 
     <ItemGroup>
