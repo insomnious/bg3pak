@@ -6,24 +6,57 @@ using System.Text;
 using K4os.Compression.LZ4;
 using Newtonsoft.Json;
 
-
-string filePath = @"C:\Users\insom\Downloads\5e Spells-125-2-1-0-6-1724104388\5eSpells.pak";
+//string pakFile = @"paks\ImpUI_26922ba9-6018-5252-075d-7ff2ba6ed879.pak";
+string pakFile = @"";
+string projectDirectory = Directory.GetCurrentDirectory();
+string filePath = Path.Combine(projectDirectory, pakFile);
 
 PakFileLoader pakLoader = new PakFileLoader();
 pakLoader.LoadFromFile(filePath);
 
-
 public class PakFileLoader
 {
-    public struct Header
+    public struct Header16
     {
         public uint Version;
         public ulong FileListOffset;
         public uint FileListSize;
         public byte Flags;
         public byte Priority;
-        public byte[] Md5;
+        public byte[] MD5;
         public ushort numParts;
+    }
+    public struct Header15
+    {
+        public uint Version;
+        public ulong FileListOffset;
+        public uint FileListSize;
+        public byte Flags;
+        public byte Priority;
+        public byte[] MD5;
+    }
+    
+    public struct CommonHeader
+    {
+        public uint Version;
+        public ulong FileListOffset;
+        public uint FileListSize;
+        public byte Flags;
+        public byte Priority;
+        public byte[] MD5;
+        public ushort numParts;
+    }
+
+    public struct FileEntry15
+    {
+        public string Name;
+        public ulong OffsetInFile;
+        public ulong SizeOnDisk;
+        public ulong UncompressedSize;
+        public uint ArchivePart;
+        public uint Flags;
+        public uint Crc;
+        public uint Unknown2;
     }
 
     public struct FileEntry18
@@ -36,9 +69,18 @@ public class PakFileLoader
         public uint SizeOnDisk;
         public uint UncompressedSize;
     }
+
+    public struct CommonFileEntry
+    {
+        public string Name;
+        public uint OffsetInFile;
+        public uint SizeOnDisk;
+        public uint UncompressedSize;
+    }
     
     private const string MAGIC_BYTES = "LSPK";
-    private const int FILE_ENTRY_SIZE = 272;
+    private const int FILE_ENTRY_15_SIZE = 296;
+    private const int FILE_ENTRY_18_SIZE = 272;
 
     public void LoadFromFile(string filePath)
     {
@@ -67,24 +109,28 @@ public class PakFileLoader
             throw new Exception($"Not a valid BG3 PAK. Magic bytes ({MAGIC_BYTES}) not found.");
         }
 
-        var data = new Header
+        var header = new CommonHeader
         {
             Version = br.ReadUInt32(),
             FileListOffset = br.ReadUInt64(),
             FileListSize = br.ReadUInt32(),
             Flags = br.ReadByte(),
             Priority = br.ReadByte(),
-            Md5 = br.ReadBytes(16),
-            numParts = br.ReadUInt16()
+            MD5 = br.ReadBytes(16)
         };
+        
+        if (header.Version == 16)
+        {
+            header.numParts = br.ReadUInt16();
+        }
 
         // display header
-        Console.WriteLine(JsonConvert.SerializeObject(data, Formatting.Indented));
+        Console.WriteLine(JsonConvert.SerializeObject(header, Formatting.Indented));
         
-        ReadCompressedFileList(br, (int)data.FileListOffset);
+        ReadCompressedFileList(br, (int)header.FileListOffset, header);
     }
 
-    private void ReadCompressedFileList(BinaryReader br, int offset)
+    private void ReadCompressedFileList(BinaryReader br, int offset, CommonHeader header)
     {
         br.BaseStream.Seek(offset, SeekOrigin.Begin);
 
@@ -94,15 +140,17 @@ public class PakFileLoader
         Console.WriteLine($"Number of files: {numOfFiles}");
         Console.WriteLine($"Compressed size: {compressedSize}");
 
-        var decompressedSize = numOfFiles * FILE_ENTRY_SIZE;
+        var decompressedSize = numOfFiles * FILE_ENTRY_15_SIZE;
         var compressed = br.ReadBytes(compressedSize);
 
         byte[] decompressed = new byte[decompressedSize];
         int decodedBytes = LZ4Codec.Decode(compressed, 0, compressed.Length, decompressed, 0, decompressed.Length);
 
         Console.WriteLine($"DecodedBytes {decodedBytes}");
+        
+        //Array.Resize(ref decompressed, decodedBytes);
 
-        if (decodedBytes == 0)
+        if (decodedBytes != decompressed.Length)
         {
             throw new InvalidOperationException("Decompression failed.");
         }
@@ -116,23 +164,18 @@ public class PakFileLoader
         // new mem stream from decompress bytes
         using var ms = new MemoryStream(decompressed);
         using var msr = new BinaryReader(ms);
-
+        
         // built up list of file entries
-        var entries = new List<FileEntry18>();
+        var entries = new List<CommonFileEntry>();
 
+        msr.BaseStream.Seek(0, SeekOrigin.Begin);
+            
         for (var i = 0; i < numOfFiles; i++)
         {
-            FileEntry18 entry = new FileEntry18
-            {
-                Name = Encoding.UTF8.GetString(msr.ReadBytes(256)).TrimEnd('\0'),
-                OffsetInFile1 = msr.ReadUInt32(),
-                OffsetInFile2 = msr.ReadUInt16(),
-                ArchivePart = msr.ReadByte(),
-                Flags = msr.ReadByte(),
-                SizeOnDisk = msr.ReadUInt32(),
-                UncompressedSize = msr.ReadUInt32()
-            };
+            var entry = GetFileEntry(msr, (int) header.Version);
 
+            Console.WriteLine(JsonConvert.SerializeObject(entry, Formatting.Indented));
+            
             entries.Add(entry);
         }
         
@@ -144,7 +187,7 @@ public class PakFileLoader
         {
             Console.WriteLine(JsonConvert.SerializeObject(metaLsx, Formatting.Indented));
 
-            byte[] metaLsxData = ReadFileEntryData(br, metaLsx, (int)metaLsx.OffsetInFile1, (int)metaLsx.SizeOnDisk);
+            byte[] metaLsxData = ReadFileEntryData(br, metaLsx, (int)metaLsx.OffsetInFile, (int)metaLsx.SizeOnDisk);
 
             string metaLsxFilePath = @"C:\Work\bg3pak\paks\meta.lsx";
             File.WriteAllBytes(metaLsxFilePath, metaLsxData);
@@ -154,8 +197,60 @@ public class PakFileLoader
             Console.WriteLine("meta.lsx not found.");
         }
     }
+    
+    CommonFileEntry GetFileEntry(BinaryReader br, int version)
+    {
+        switch (version)
+        {
+            case 15:
+            {
+                FileEntry15 entry = new FileEntry15
+                {
+                    Name = Encoding.UTF8.GetString(br.ReadBytes(256)).TrimEnd('\0'),
+                    OffsetInFile = br.ReadUInt64(),
+                    SizeOnDisk = br.ReadUInt64(),
+                    UncompressedSize = br.ReadUInt64(),
+                    ArchivePart = br.ReadUInt32(),
+                    Flags = br.ReadUInt32(),
+                    Crc = br.ReadUInt32(),
+                    Unknown2 = br.ReadUInt32()
+                }; 
+                
+                return new CommonFileEntry
+                {
+                    Name = entry.Name,
+                    OffsetInFile = (uint) entry.OffsetInFile,
+                    SizeOnDisk = (uint) entry.SizeOnDisk,
+                    UncompressedSize = (uint) entry.UncompressedSize
+                };
+            }
+            case 18:
+            {
+                var entry = new FileEntry18
+                {
+                    Name = Encoding.UTF8.GetString(br.ReadBytes(256)).TrimEnd('\0'),
+                    OffsetInFile1 = br.ReadUInt32(),
+                    OffsetInFile2 = br.ReadUInt16(),
+                    ArchivePart = br.ReadByte(),
+                    Flags = br.ReadByte(),
+                    SizeOnDisk = br.ReadUInt32(),
+                    UncompressedSize = br.ReadUInt32()
+                };
+                
+                return new CommonFileEntry
+                {
+                    Name = entry.Name,
+                    OffsetInFile = entry.OffsetInFile1,
+                    SizeOnDisk = entry.SizeOnDisk,
+                    UncompressedSize = entry.UncompressedSize
+                };
+            }
+            default:
+                throw new Exception("Invalid version.");
+        }
+    }
 
-    private byte[] ReadFileEntryData(BinaryReader br, FileEntry18 fileMeta, int offset, int size)
+    private byte[] ReadFileEntryData(BinaryReader br, CommonFileEntry fileMeta, int offset, int size)
     {
         br.BaseStream.Seek(offset, SeekOrigin.Begin);
 

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<save>
+    <version major="4" minor="0" revision="0" build="49"/>
+    <region id="Config">
+        <node id="root">
+            <children>
+                <node id="Dependencies">
+                    <node id="ModuleShortDesc">
+                    	<attribute id="Folder" type="LSWString" value="Gustav" />
+                    	<attribute id="MD5" type="LSString" value="" />
+                    	<attribute id="Name" type="FixedString" value="Gustav" />
+                    	<attribute id="UUID" type="FixedString" value="991c9c7a-fb80-40cb-8f0d-b92d4e80e9b1" />
+                    	<attribute id="Version" type="int32" value="268435456" />
+                    </node>
+                </node>
+                <node id="ModuleInfo">
+                    <attribute id="Author" type="LSWString" value="Synyster328"/>
+                    <attribute id="CharacterCreationLevelName" type="FixedString" value=""/>
+                    <attribute id="Description" type="LSWString" value="Mod the places a copy of most game items in a chest at the beginning of the game (on the platform behind you)."/>
+                    <attribute id="Folder" type="LSWString" value="AllItems"/>
+                    <attribute id="GMTemplate" type="FixedString" value=""/>
+                    <attribute id="LobbyLevelName" type="FixedString" value=""/>
+                    <attribute id="MD5" type="LSString" value=""/>
+                    <attribute id="MainMenuBackgroundVideo" type="FixedString" value=""/>
+                    <attribute id="MenuLevelName" type="FixedString" value=""/>
+                    <attribute id="Name" type="FixedString" value="AllItems"/>
+                    <attribute id="NumPlayers" type="uint8" value="4"/>
+                    <attribute id="PhotoBooth" type="FixedString" value=""/>
+                    <attribute id="StartupLevelName" type="FixedString" value=""/>
+                    <attribute id="Tags" type="LSWString" value=""/>
+                    <attribute id="Type" type="FixedString" value="Add-on"/>
+		    <attribute id="UUID" type="FixedString" value="44c1adf4-9b2e-47e9-b20b-c090d837b98a"/>
+		    <attribute id="Version" type="int32" value="1"/>
+                    <children>
+                        <node id="PublishVersion">
+                            <attribute id="Version" type="int32" value="268435456"/>
+                        </node>
+                        <node id="Scripts"/>
+                        <node id="TargetModes">
+                            <children>
+                                <node id="Target">
+                                    <attribute id="Object" type="FixedString" value="Story"/>
+                                </node>
+                            </children>
+                        </node>
+                    </children>
+                </node>
+            </children>
+        </node>
+    </region>
+</save>
