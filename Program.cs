@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,6 +6,7 @@ using K4os.Compression.LZ4;
 using Newtonsoft.Json;
 
 //string pakFile = @"paks\ImpUI_26922ba9-6018-5252-075d-7ff2ba6ed879.pak";
+//string pakFile = @"assets/5eSpells.pak";
 string pakFile = @"assets/AllItems.pak";
 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, pakFile);
 
@@ -139,7 +140,7 @@ public class PakFileLoader
         Console.WriteLine($"Number of files: {numOfFiles}");
         Console.WriteLine($"Compressed size: {compressedSize}");
 
-        var decompressedSize = numOfFiles * FILE_ENTRY_15_SIZE;
+        var decompressedSize = numOfFiles * (header.Version == 15 ? FILE_ENTRY_15_SIZE : FILE_ENTRY_18_SIZE);
         var compressed = br.ReadBytes(compressedSize);
 
         byte[] decompressed = new byte[decompressedSize];
